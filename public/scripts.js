@@ -84,7 +84,7 @@ const chart = new Chart(classificationChart, {
 
 async function checkEmailClassification(email) {
   try {
-    const response = await fetch("/classify-email", {
+    const response = await fetch("/api/classify-email", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -105,7 +105,7 @@ async function checkEmailClassification(email) {
 }
 
 document.getElementById("generateSpam").onclick = async function () {
-  const email = await fetch("/generate-spam").then((res) => res.json());
+  const email = await fetch("/api/generate-spam").then((res) => res.json());
   const classification = await checkEmailClassification(email.email);
   console.log(classification);
   const correctness = classification === "TRUE" ? "Correct" : "Incorrect";
@@ -121,7 +121,7 @@ document.getElementById("generateSpam").onclick = async function () {
 };
 
 document.getElementById("generateNotSpam").onclick = async function () {
-  const email = await fetch("/generate-not-spam").then((res) => res.json());
+  const email = await fetch("/api/generate-not-spam").then((res) => res.json());
   const classification = await checkEmailClassification(email.email);
   const correctness = classification === "FALSE" ? "Correct" : "Incorrect";
   addEmailToTable(email.email, "Not Spam", classification, correctness);
