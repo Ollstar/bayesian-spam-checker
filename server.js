@@ -15,16 +15,17 @@ app.use(express.static("public", { extensions: ["html", "js", "css"] }));
 
 app.post("/classify-email", async (req, res) => {
   const { email } = req.body;
-  console.log(email);
+  // console.log(email);
   if (!email) {
     return res.status(400).json({ error: "Email is required" });
   }
 
   const completion = await openai.createChatCompletion({
     model: "gpt-4",
+    temperature: 0.0,
     messages: [{ role: "user", content: `Use your skills to decipher if this email is spam or not, based on if you think its spam say TRUE if you think it is not spam say FALSE, do not include anything else in response-- email: ${email}` }],
   });
-  console.log(completion.data.choices[0].message.content);
+  // console.log(completion.data.choices[0].message.content);
   res.json({ classification: completion.data.choices[0].message.content });
 });
 
@@ -33,6 +34,7 @@ async function generateRandomEmail(prompt) {
     const completion = await openai.createChatCompletion({
       model: "gpt-4",
       messages: [{ role: "user", content: prompt }],
+      temperature: 0.5,
     });
 
     return completion.data.choices[0].message.content.trim();

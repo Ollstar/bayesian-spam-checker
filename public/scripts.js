@@ -1,46 +1,11 @@
 const emailInput = document.getElementById("emailInput");
-const submitBtn = document.getElementById("submitBtn");
+
 
 const result = document.getElementById("result");
 let spamCount = 0;
 let notSpamCount = 0;
 let correctCount = 0;
 let totalCount = 0;
-submitBtn.onclick = async function () {
-  const email = emailInput.value;
-  if (email) {
-    try {
-      const response = await fetch("/classify-email", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Error classifying email");
-      }
-
-      const { classification } = await response.json();
-      result.innerHTML = `This email is classified as: <strong>${classification}</strong>`;
-
-      // Update chart based on classification
-      if (classification === "TRUE") {
-        spamCount++;
-      } else if (classification === "FALSE") {
-        notSpamCount++;
-      }
-      chart.data.datasets[0].data = [spamCount, notSpamCount];
-      chart.update();
-
-    } catch (error) {
-      result.innerHTML = "Error classifying email. Please try again later.";
-    }
-  } else {
-    result.innerHTML = "Please enter an email message.";
-  }
-};
 
 
 const classificationChart = document.getElementById("classificationChart");
@@ -53,7 +18,7 @@ const chart = new Chart(classificationChart, {
       {
         label: "Email Classification",
         data: [spamCount, notSpamCount],
-        backgroundColor: ["rgba(255, 99, 132, 0.2)", "rgba(75, 192, 192, 0.2)"],
+        backgroundColor: ["rgba(255, 99, 132, 0.6)", "rgba(75, 192, 192, 0.6)"],
         borderColor: ["rgba(255, 99, 132, 1)", "rgba(75, 192, 192, 1)"],
         borderWidth: 1,
       },
@@ -61,27 +26,60 @@ const chart = new Chart(classificationChart, {
         label: "Correctness Score",
         data: [0],
         type: "line",
+        fill: false,
         borderColor: "rgba(153, 102, 255, 1)",
-        backgroundColor: "rgba(153, 102, 255, 0.2)",
+        pointBackgroundColor: "rgba(153, 102, 255, 1)",
         yAxisID: "y1",
       },
     ],
   },
   options: {
+    responsive: true,
+    maintainAspectRatio: false,
     scales: {
       y: {
         beginAtZero: true,
+        grid: {
+          display: true,
+          drawBorder: false,
+          color: "rgba(0, 0, 0, 0.1)",
+        },
+        ticks: {
+          callback: function (value) {
+            return value.toLocaleString();
+          },
+        },
       },
       y1: {
         type: "linear",
         display: true,
         position: "right",
         beginAtZero: true,
-        max: 110,
+        max: 100,
+        grid: {
+          display: false,
+        },
+        ticks: {
+          callback: function (value) {
+            return value + "%";
+          },
+        },
+      },
+    },
+    plugins: {
+      tooltip: {
+        backgroundColor: "rgba(0, 0, 0, 0.8)",
+        displayColors: false,
+      },
+      legend: {
+        labels: {
+          usePointStyle: true,
+        },
       },
     },
   },
 });
+
 
 
 async function checkEmailClassification(email) {
@@ -109,8 +107,9 @@ async function checkEmailClassification(email) {
 document.getElementById("generateSpam").onclick = async function () {
   const email = await fetch("/generate-spam").then((res) => res.json());
   const classification = await checkEmailClassification(email.email);
+  console.log(classification);
   const correctness = classification === "TRUE" ? "Correct" : "Incorrect";
-  addEmailToTable(email.email, "Spam", correctness);
+  addEmailToTable(email.email, "Spam", classification, correctness);
   totalCount++;
   if (classification === "TRUE") {
     spamCount++;
@@ -125,7 +124,7 @@ document.getElementById("generateNotSpam").onclick = async function () {
   const email = await fetch("/generate-not-spam").then((res) => res.json());
   const classification = await checkEmailClassification(email.email);
   const correctness = classification === "FALSE" ? "Correct" : "Incorrect";
-  addEmailToTable(email.email, "Not Spam", correctness);
+  addEmailToTable(email.email, "Not Spam", classification, correctness);
   totalCount++;
   if (classification === "FALSE") {
     notSpamCount++;
@@ -137,28 +136,69 @@ document.getElementById("generateNotSpam").onclick = async function () {
 };
 
 
-
-addNotSpamBtn.onclick = async function () {
-  try {
-    const response = await fetch("/generate-not-spam");
-    if (!response.ok) {
-      throw new Error("Error generating non-spam email");
-    }
-    const { email } = await response.json();
-    emailInput.value = email;
-  } catch (error) {
-    console.error(error);
-  }
-};
-function addEmailToTable(email, type, correctness) {
+function addEmailToTable(email, type, aiGuess, correctness) {
   const emailTableBody = document.getElementById("emailTableBody");
   const newRow = emailTableBody.insertRow();
 
   const emailCell = newRow.insertCell(0);
   const typeCell = newRow.insertCell(1);
-  const correctnessCell = newRow.insertCell(2);
+  const aiGuessCell = newRow.insertCell(2); // Add this line
+  const correctnessCell = newRow.insertCell(3);
 
   emailCell.textContent = email;
   typeCell.textContent = type;
+  aiGuessCell.textContent = aiGuess === "TRUE" ? "Spam" : "Not Spam"; // Add this line
   correctnessCell.textContent = correctness;
 }
+
+
+document.getElementById("uploadCsvBtn").onclick = function () {
+  document.getElementById("csvInputContainer").style.display = "block";
+};
+async function processCsvFile(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      const fileContent = event.target.result;
+      const lines = fileContent.trim().split("\n");
+
+      // Detect the delimiter by checking the first line
+      const delimiter = lines[0].includes("\t") ? "\t" : ",";
+
+      for (const line of lines) {
+        const [email, expectedType] = line.split(delimiter);
+        const classification = await checkEmailClassification(email);
+        const expectedClassification = expectedType.trim() === "spam" ? "TRUE" : "FALSE";
+        const correctness = classification === expectedClassification ? "Correct" : "Incorrect";
+        addEmailToTable(email, expectedType, classification, correctness);
+        totalCount++;
+        if (correctness === "Correct") {
+          correctCount++;
+          if (classification === "TRUE") {
+            spamCount++;
+          } else {
+            notSpamCount++;
+          }
+        }
+      }
+      chart.data.datasets[0].data = [spamCount, notSpamCount];
+      chart.data.datasets[1].data = [(correctCount / totalCount) * 100];
+      chart.update();
+      resolve();
+    };
+    reader.onerror = (error) => reject(error);
+    reader.readAsText(file);
+  });
+}
+
+
+
+document.getElementById("processCsvBtn").onclick = async function () {
+  const csvInput = document.getElementById("csvInput");
+  if (csvInput.files.length === 0) {
+    alert("Please select a CSV file.");
+    return;
+  }
+  const file = csvInput.files[0];
+  await processCsvFile(file);
+};

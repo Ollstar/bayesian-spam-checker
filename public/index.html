@@ -1,35 +1,46 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial 1.0">
-  <title>Bayesian Spam Filter Project</title>
-  <link rel="stylesheet" href="styles.css">
-</head>
-<body>
-  <h1>Bayesian Spam Filter</h1>
-  <h2>Email Classifier</h2>
-  <p>Enter your email message below to check if it's spam or not:</p>
-  <table id="emailTable" class="email-table">
-    <thead>
-      <tr>
-        <th>Email</th>
-        <th>Type</th>
-        <th>Correctness</th>
-      </tr>
-    </thead>
-    <tbody id="emailTableBody"></tbody>
-  </table>  <br>
-  <button id="submitBtn" class="submit-btn">Check Email</button>
-  <button id="generateSpam" class="submit-btn">Add Spam Email</button>
-  <button id="generateNotSpam" class="submit-btn">Add Non-Spam Email</button>
-  <!-- Add this inside the body tag, after the previous button elements -->
-<canvas id="classificationChart"></canvas>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial 1.0" />
+    <title>Bayesian Spam Filter Project</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <h1>Bayesian Spam Filter</h1>
+    <h2>Email Classifier</h2>
+    <p>Enter your email message below to check if it's spam or not:</p>
+    <table id="emailTable" class="email-table">
+      <thead>
+        <tr>
+          <th>Email</th>
+          <th>Type</th>
+          <th>AI's Guess</th> <!-- Add this line -->
+          <th>Correctness</th>
+        </tr>
+      </thead>
+      
+      <tbody id="emailTableBody"></tbody>
+    </table>
+    <br />
 
-  <p id="result"></p>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <button id="generateSpam" class="submit-btn">Add Spam Email</button>
+    <button id="generateNotSpam" class="submit-btn">Add Non-Spam Email</button>
+    <!-- Add these lines after the "generateNotSpam" button -->
+    <button id="uploadCsvBtn" class="submit-btn">Upload CSV</button>
+    <div id="csvInputContainer" style="display: none">
+      <input type="file" id="csvInput" accept=".csv, .tsv, text/tab-separated-values">
+      <button id="processCsvBtn" class="submit-btn">Process CSV</button>
+    </div>
 
-  <script src="scripts.js"></script>
-  
-</body>
+    <!-- Add this inside the body tag, after the previous button elements -->
+    <div id="chart-container">
+      <canvas id="classificationChart"></canvas>
+    </div>
+
+    <p id="result"></p>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script src="scripts.js"></script>
+  </body>
 </html>
