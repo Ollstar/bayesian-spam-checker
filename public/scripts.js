@@ -1,12 +1,9 @@
 const emailInput = document.getElementById("emailInput");
-
-
 const result = document.getElementById("result");
 let spamCount = 0;
 let notSpamCount = 0;
 let correctCount = 0;
 let totalCount = 0;
-
 
 const classificationChart = document.getElementById("classificationChart");
 
@@ -80,8 +77,6 @@ const chart = new Chart(classificationChart, {
   },
 });
 
-
-
 async function checkEmailClassification(email) {
   try {
     const response = await fetch("/api/classify-email", {
@@ -105,6 +100,11 @@ async function checkEmailClassification(email) {
 }
 
 document.getElementById("generateSpam").onclick = async function () {
+  if (this.classList.contains("disabled")) {
+    return;
+  }
+  this.classList.add("active");
+  this.classList.add("disabled");
   const email = await fetch("/api/generate-spam").then((res) => res.json());
   const classification = await checkEmailClassification(email.email);
   console.log(classification);
@@ -118,9 +118,16 @@ document.getElementById("generateSpam").onclick = async function () {
   chart.data.datasets[0].data = [spamCount, notSpamCount];
   chart.data.datasets[1].data = [(correctCount / totalCount) * 100];
   chart.update();
+  this.classList.remove("active");
+  this.classList.remove("disabled");
 };
 
 document.getElementById("generateNotSpam").onclick = async function () {
+  if (this.classList.contains("disabled")) {
+    return;
+  }
+  this.classList.add("active");
+  this.classList.add("disabled");
   const email = await fetch("/api/generate-not-spam").then((res) => res.json());
   const classification = await checkEmailClassification(email.email);
   const correctness = classification === "FALSE" ? "Correct" : "Incorrect";
@@ -133,8 +140,9 @@ document.getElementById("generateNotSpam").onclick = async function () {
   chart.data.datasets[0].data = [spamCount, notSpamCount];
   chart.data.datasets[1].data = [(correctCount / totalCount) * 100];
   chart.update();
+  this.classList.remove("active");
+  this.classList.remove("disabled");
 };
-
 
 function addEmailToTable(email, type, aiGuess, correctness) {
   const emailTableBody = document.getElementById("emailTableBody");
@@ -151,25 +159,26 @@ function addEmailToTable(email, type, aiGuess, correctness) {
   correctnessCell.textContent = correctness;
 }
 
-
 document.getElementById("uploadCsvBtn").onclick = function () {
   document.getElementById("csvInputContainer").style.display = "block";
 };
+
 async function processCsvFile(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = async (event) => {
       const fileContent = event.target.result;
       const lines = fileContent.trim().split("\n");
-
       // Detect the delimiter by checking the first line
       const delimiter = lines[0].includes("\t") ? "\t" : ",";
 
       for (const line of lines) {
         const [email, expectedType] = line.split(delimiter);
         const classification = await checkEmailClassification(email);
-        const expectedClassification = expectedType.trim() === "spam" ? "TRUE" : "FALSE";
-        const correctness = classification === expectedClassification ? "Correct" : "Incorrect";
+        const expectedClassification =
+          expectedType.trim() === "spam" ? "TRUE" : "FALSE";
+        const correctness =
+          classification === expectedClassification ? "Correct" : "Incorrect";
         addEmailToTable(email, expectedType, classification, correctness);
         totalCount++;
         if (correctness === "Correct") {
@@ -180,18 +189,16 @@ async function processCsvFile(file) {
             notSpamCount++;
           }
         }
+        chart.data.datasets[0].data = [spamCount, notSpamCount];
+        chart.data.datasets[1].data = [(correctCount / totalCount) * 100];
+        chart.update();
       }
-      chart.data.datasets[0].data = [spamCount, notSpamCount];
-      chart.data.datasets[1].data = [(correctCount / totalCount) * 100];
-      chart.update();
       resolve();
     };
     reader.onerror = (error) => reject(error);
     reader.readAsText(file);
   });
 }
-
-
 
 document.getElementById("processCsvBtn").onclick = async function () {
   const csvInput = document.getElementById("csvInput");
@@ -200,5 +207,109 @@ document.getElementById("processCsvBtn").onclick = async function () {
     return;
   }
   const file = csvInput.files[0];
+  this.classList.add("disabled");
   await processCsvFile(file);
+  this.classList.remove("disabled");
 };
+
+// Disable buttons while loading
+document.getElementById("generateSpam").onclick = async function () {
+  if (this.classList.contains("disabled")) {
+    return;
+  }
+  this.classList.add("active");
+  this.classList.add("disabled");
+  const email = await fetch("/api/generate-spam").then((res) => res.json());
+  const classification = await checkEmailClassification(email.email);
+  console.log(classification);
+  const correctness = classification === "TRUE" ? "Correct" : "Incorrect";
+  addEmailToTable(email.email, "Spam", classification, correctness);
+  totalCount++;
+  if (classification === "TRUE") {
+    spamCount++;
+    correctCount++;
+  }
+  chart.data.datasets[0].data = [spamCount, notSpamCount];
+  chart.data.datasets[1].data = [(correctCount / totalCount) * 100];
+  chart.update();
+  this.classList.remove("active");
+  this.classList.remove("disabled");
+};
+
+document.getElementById("generateNotSpam").onclick = async function () {
+  if (this.classList.contains("disabled")) {
+    return;
+  }
+  this.classList.add("active");
+  this.classList.add("disabled");
+  const email = await fetch("/api/generate-not-spam").then((res) => res.json());
+  const classification = await checkEmailClassification(email.email);
+  const correctness = classification === "FALSE" ? "Correct" : "Incorrect";
+  addEmailToTable(email.email, "Not Spam", classification, correctness);
+  totalCount++;
+  if (classification === "FALSE") {
+    notSpamCount++;
+    correctCount++;
+  }
+  chart.data.datasets[0].data = [spamCount, notSpamCount];
+  chart.data.datasets[1].data = [(correctCount / totalCount) * 100];
+  chart.update();
+  this.classList.remove("active");
+  this.classList.remove("disabled");
+};
+
+function addEmailToTable(email, type, aiGuess, correctness) {
+  const emailTableBody = document.getElementById("emailTableBody");
+  const newRow = emailTableBody.insertRow();
+
+  const emailCell = newRow.insertCell(0);
+  const typeCell = newRow.insertCell(1);
+  const aiGuessCell = newRow.insertCell(2); // Add this line
+  const correctnessCell = newRow.insertCell(3);
+
+  emailCell.textContent = email;
+  typeCell.textContent = type;
+  aiGuessCell.textContent = aiGuess === "TRUE" ? "Spam" : "Not Spam"; // Add this line
+  correctnessCell.textContent = correctness;
+}
+
+document.getElementById("uploadCsvBtn").onclick = function () {
+  document.getElementById("csvInputContainer").style.display = "block";
+};
+
+async function processCsvFile(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      const fileContent = event.target.result;
+      const lines = fileContent.trim().split("\n");
+      // Detect the delimiter by checking the first line
+      const delimiter = lines[0].includes("\t") ? "\t" : ",";
+
+      for (const line of lines) {
+        const [email, expectedType] = line.split(delimiter);
+        const classification = await checkEmailClassification(email);
+        const expectedClassification =
+          expectedType.trim() === "spam" ? "TRUE" : "FALSE";
+        const correctness =
+          classification === expectedClassification ? "Correct" : "Incorrect";
+        addEmailToTable(email, expectedType, classification, correctness);
+        totalCount++;
+        if (correctness === "Correct") {
+          correctCount++;
+          if (classification === "TRUE") {
+            spamCount++;
+          } else {
+            notSpamCount++;
+          }
+        }
+        chart.data.datasets[0].data = [spamCount, notSpamCount];
+        chart.data.datasets[1].data = [(correctCount / totalCount) * 100];
+        chart.update(); // Add this line
+      }
+      resolve();
+    };
+    reader.onerror = (error) => reject(error);
+    reader.readAsText(file);
+  });
+}

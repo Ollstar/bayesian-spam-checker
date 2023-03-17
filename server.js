@@ -13,7 +13,7 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 app.use(express.static("public", { extensions: ["html", "js", "css"] }));
 
-app.post("/classify-email", async (req, res) => {
+app.post("/api/classify-email", async (req, res) => {
   const { email } = req.body;
   // console.log(email);
   if (!email) {
@@ -44,12 +44,12 @@ async function generateRandomEmail(prompt) {
   }
 }
 
-app.get("/generate-spam", async (req, res) => {
+app.get("/api/generate-spam", async (req, res) => {
   const email = await generateRandomEmail("Generate a random spam email maximum 100 words:");
   res.json({ email });
 });
 
-app.get("/generate-not-spam", async (req, res) => {
+app.get("/api/generate-not-spam", async (req, res) => {
   const email = await generateRandomEmail("Generate a random non-spam email maximum 100 words:");
   res.json({ email });
 });
