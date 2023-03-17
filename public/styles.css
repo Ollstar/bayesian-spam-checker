@@ -160,6 +160,7 @@ a:hover {
 @media (max-width: 950px) {
   #container {
     flex-direction: column;
+    overflow: auto;
   }
   #table-wrapper,
   #chart-wrapper {
